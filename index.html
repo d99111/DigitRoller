@@ -305,8 +305,9 @@
 
     const intEl = document.createElement('span');
     intEl.className = 'integer';
-    for (const ch of parsed.ints) {
-      intEl.appendChild(createDigitColumn(ch));
+    const intsClean = stripLeadingZerosInt(parsed.ints);
+    for (const ch of intsClean) {
+        intEl.appendChild(createDigitColumn(ch));
     }
 
     const sepEl = document.createElement('span');
@@ -360,10 +361,12 @@
 
     const sep = next.sep || prev.sep || ',';
     const maxFrac = Math.max(prev.fracs.length, next.fracs.length);
-    const maxInt = Math.max(prev.ints.length, next.ints.length);
-
-    const prevInts = padLeft(prev.ints, maxInt, '0');
-    const nextInts = padLeft(next.ints, maxInt, '0');
+    const prevIntsRaw = stripLeadingZerosInt(prev.ints);
+    const nextIntsRaw = stripLeadingZerosInt(next.ints);
+    const maxInt = Math.max(prevIntsRaw.length, nextIntsRaw.length);
+    
+    //const prevInts = padLeft(prev.ints, maxInt, '0');
+    //const nextInts = padLeft(next.ints, maxInt, '0');
     const prevFracs = padRight(prev.fracs, maxFrac, '0');
     const nextFracs = padRight(next.fracs, maxFrac, '0');
 
@@ -397,8 +400,12 @@
     for (let i = 0; i < maxInt; i++) {
       const col = intCols[i];
       const reel = col.querySelector('.reel');
-      const fromDigit = prevInts[i] || '0';
-      const toDigit = nextInts[i] || '0';
+      const prevIndex = prevIntsRaw.length - maxInt + i;
+      const nextIndex = nextIntsRaw.length - maxInt + i;
+      const fromDigit = prevIndex >= 0
+        ? prevIntsRaw[prevIndex]
+        : (nextIndex >= 0 ? nextIntsRaw[nextIndex] : '0');
+      const toDigit = nextIndex >= 0 ? nextIntsRaw[nextIndex] : fromDigit;
       animateReelTo(reel, fromDigit, toDigit);
       col.dataset.current = toDigit;
     }
@@ -434,6 +441,12 @@
   fromInput.addEventListener('change', () => {
     if (showing === 'from') renderValue(roller, fromInput.value);
   });
+
+  function stripLeadingZerosInt(s) {
+  if (s.length === 0) return s;
+  if (/^0+$/.test(s)) return '0';
+  return s.replace(/^0+(?=\d)/, '');
+}
 </script>
 </body>
 </html>
